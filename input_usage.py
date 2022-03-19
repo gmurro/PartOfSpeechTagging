@@ -1,22 +1,27 @@
 from data_input import DataInput
 from text_vectorizer import TextVectorizer, TargetVectorizer
+import os
 
 if __name__ == "__main__":
-    di = DataInput(
-        "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/dependency_treebank.zip",
-        0.5,
-        0.25,
+    dataset = DataInput(
+        data_url="https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/dependency_treebank.zip",
+        train_size=0.5,
+        dev_size=0.25,
+        dataset_folder=os.path.join(os.getcwd(), "dataset"),
+        split_into_sentences=False
     )
+
     tv = TextVectorizer(max_tokens=20000)
-    tv.adapt(di.datasets[0][0])
-    X_train = tv.transform(di.datasets[0][0])
-    tv.adapt(di.datasets[1][0])
-    X_dev = tv.transform(di.datasets[1][0])
-    tv.adapt(di.datasets[2][0])
-    X_test = tv.transform(di.datasets[2][0])
+    tv.adapt(dataset.train[0])
+    X_train = tv.transform(dataset.train[0])
+    tv.adapt(dataset.dev[0])
+    X_dev = tv.transform(dataset.dev[0])
+    tv.adapt(dataset.test[0])
+    X_test = tv.transform(dataset.test[0])
+
     target_vec = TargetVectorizer()
-    target_vec.adapt(di.datasets[0][1])
-    y_train = target_vec.transform(di.datasets[0][1])
-    y_dev = target_vec.transform(di.datasets[1][1])
-    y_test = target_vec.transform(di.datasets[2][1])
+    target_vec.adapt(dataset.train[1])
+    y_train = target_vec.transform(dataset.train[1])
+    y_dev = target_vec.transform(dataset.dev[1])
+    y_test = target_vec.transform(dataset.test[1])
     print(X_train, y_train)
