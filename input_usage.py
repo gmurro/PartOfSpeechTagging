@@ -8,14 +8,14 @@ if __name__ == "__main__":
         train_size=0.50,
         dev_size=0.25,
         dataset_folder=os.path.join(os.getcwd(), "dataset"),
-        split_into_sentences=False
+        split_into_sentences=True
     )
-    
+
     # do preprocessing for train, validation and test sets
     dataset.preprocessing("train")
     dataset.preprocessing("dev")
     dataset.preprocessing("test")
-
+    
     # separate inputs and targets
     X_train, y_train = dataset.train
     X_dev, y_dev = dataset.dev
@@ -23,6 +23,7 @@ if __name__ == "__main__":
 
     # convert inputs to vector representation
     text_vectorizer = TextVectorizer(
+        max_tokens=200000,
         embedding_dim=50,
         embedding_folder=os.path.join(os.getcwd(), "embeddings")
     )

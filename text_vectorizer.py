@@ -81,7 +81,7 @@ class TextVectorizer:
         """
         vocabulary = {}
         embedding_file = os.path.join(embedding_folder, "glove.6B." + str(self.embedding_dim) + "d.txt")
-        with open(embedding_file) as f:
+        with open(embedding_file, encoding="utf8") as f:
             for line in f:
                 word, coefs = line.split(maxsplit=1)
                 coefs = np.fromstring(coefs, "f", sep=" ")
@@ -90,7 +90,7 @@ class TextVectorizer:
 
     def adapt(self, documents):
         """
-        Computes the OOV words for a single data split, and adds them to the dictionary.
+        Computes the OOV words for a single data split, and adds them to the vocabulary.
         
         Parameters
         ----------
@@ -117,9 +117,9 @@ class TextVectorizer:
         
         Returns
         -------
-        Numpy array of shape (number of documents, number of words, embedding dimension)
+        Array of shape (number of documents, number of words, embedding dimension)
         """
-        return np.array([self._transform_document(document) for document in documents])
+        return [self._transform_document(document) for document in documents]
 
     def _transform_document(self, document):
         """
@@ -171,23 +171,31 @@ class TargetVectorizer:
 
         Returns
         -------
-        Numpy array of shape (number of documents, numbero of tokens, number of classes)
+        List of shape (number of documents, numbero of tokens, number of classes)
         """
         if self.vectorizer.classes_.shape[0] == 0:
             raise NotAdaptedError(
                 "The target vectorizer has not been adapted yet. Please adapt it first."
             )
-        return np.array([self.vectorizer.transform(document) for document in targets])
+        return [self.vectorizer.transform(document) for document in targets]
 
     def inverse_transform(self, targets):
         """
         Performs the inverse one-hot encoding for the dataset Ys, returning a list of decoded document tags.
+
+        Parameters
+        ----------
+        targets : The target tags for the dataset split given, already in one-hot encoding form.
+
+        Returns
+        -------
+        List of decoded document tags
         """
         if self.vectorizer.classes_.shape[0] == 0:
             raise NotAdaptedError(
                 "The target vectorizer has not been adapted yet. Please adapt it first."
             )
-        return np.array([self.vectorizer.inverse_transform(document) for document in targets])
+        return [self.vectorizer.inverse_transform(document) for document in targets]
 
 
 if __name__ == "__main__":
@@ -201,12 +209,11 @@ if __name__ == "__main__":
         np_doc = np.loadtxt(doc_path, str, delimiter="\t")
         X.append(np_doc[:, 0])
         y.append(np_doc[:, 1])
-    X, y = np.array(X), np.array(y)
 
     print("BEFORE VECTORIZING")
     print("First input data:")
     print(f"\tShape: {X[0].shape}")
-    #print(f"\tInput: {X[0]}")
+    print(f"\tInput: {X[0]}")
     print("First target data:")
     print(f"\tShape: {y[0].shape}")
     print(f"\tTarget: {y[0]}")

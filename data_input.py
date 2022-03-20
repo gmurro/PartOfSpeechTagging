@@ -9,7 +9,7 @@ class DataInput:
     """
     This class is used to load the data from the data_url and create the train, dev and test datasets.
     """
-    def __init__(self, data_url, train_size, dev_size, dataset_folder="data", split_into_sentences=False):
+    def __init__(self, data_url, train_size, dev_size, dataset_folder="data", split_into_sentences=False, shuffle=False):
         """
         Constructor for DataInput class that loads the data from the data_url and creates the train, dev and test datasets.
         The dataset splitted is available through the instance variables self.train, self.dev, self.test
@@ -21,10 +21,11 @@ class DataInput:
         dev_size : percentage of the dataset that will be used for development
         dataset_folder : folder where the dataset will be downloaded
         split_into_sentences : boolean indicating if each document in the dataset should be splitted into sentences or not
+        shuffle : boolean indicating if the dataset should be shuffled or not before splitting
         """
         docs = self.import_data(data_url, dataset_folder)           
         X, y = self.parse_dataset(docs, split_into_sentences)
-        self.train, self.dev, self.test = self.train_dev_test_split(X, y, train_size, dev_size, path_store=os.path.join(dataset_folder, "split"))
+        self.train, self.dev, self.test = self.train_dev_test_split(X, y, train_size, dev_size, path_store=os.path.join(dataset_folder, "split"), shuffle=shuffle)
 
     def import_data(self, data_url, dataset_folder):
         """
@@ -107,9 +108,9 @@ class DataInput:
                 np_doc = np.loadtxt(doc, str, delimiter="\t", usecols = (0, 1))
                 X.append(np_doc[:, 0])
                 y.append(np_doc[:, 1])
-        return np.array(X), np.array(y)
+        return X, y
 
-    def train_dev_test_split(self, X, y, train_size, dev_size, path_store=None):
+    def train_dev_test_split(self, X, y, train_size, dev_size, path_store=None, shuffle=False):
         """
         Split dataset into train, validation and test.
 
@@ -119,6 +120,7 @@ class DataInput:
         y : list of lists of POS tags in each document/sentence
         train_size : percentage of the dataset used for training
         dev_size : percentage of the dataset used for validation (note that test size is 1-train_size-dev_size)
+        shuffle : boolean indicating if the dataset should be shuffled before splitting
         path_store : path where the split datasets will be stored. If None, then the split datasets will not be stored.
         
         Returns
@@ -126,10 +128,11 @@ class DataInput:
         triple where the first element is the train-set, the second element is the dev-set and the third element is the test-set
         """
         # shuffle the dataset
-        dataset = list(zip(X, y))
-        random.shuffle(dataset)
-        X, y = zip(*dataset)
-        X, y = np.array(X), np.array(y)
+        if shuffle:
+            dataset = list(zip(X, y))
+            random.shuffle(dataset)
+            X, y = zip(*dataset)
+            X, y = list(X), list(y)
 
         # create folder where the split datasets will be stored if it does not exist
         if path_store is not None and not os.path.exists(path_store):
@@ -141,23 +144,23 @@ class DataInput:
         train_size = int(np.ceil(train_size*len(X)))
         train_set = (X[:train_size], y[:train_size])
         if path_store is not None:
-            np.savetxt(os.path.join(path_store, "train", "X_train.txt"), train_set[0], fmt="%s")
-            np.savetxt(os.path.join(path_store, "train", "y_train.txt"), train_set[1], fmt="%s")
+            np.savetxt(os.path.join(path_store, "train", "X_train.txt"), np.array(train_set[0], dtype=object), fmt="%s")
+            np.savetxt(os.path.join(path_store, "train", "y_train.txt"),  np.array(train_set[1], dtype=object), fmt="%s")
         print("Train set size:", len(train_set[0]))
 
         # build the dev set
         dev_size = int(np.ceil(dev_size*len(X)))
         dev_set = (X[train_size:train_size+dev_size], y[train_size:train_size+dev_size])
         if path_store is not None:
-            np.savetxt(os.path.join(path_store, "dev", "X_dev.txt"), dev_set[0], fmt="%s")
-            np.savetxt(os.path.join(path_store, "dev", "y_dev.txt"), dev_set[1], fmt="%s")
+            np.savetxt(os.path.join(path_store, "dev", "X_dev.txt"),  np.array(dev_set[0], dtype=object), fmt="%s")
+            np.savetxt(os.path.join(path_store, "dev", "y_dev.txt"),  np.array(dev_set[1], dtype=object), fmt="%s")
         print("Dev set size:", len(dev_set[0]))
 
         # build the test set
         test_set = (X[train_size+dev_size:], y[train_size+dev_size:])
         if path_store is not None:
-            np.savetxt(os.path.join(path_store, "test", "X_test.txt"), test_set[0], fmt="%s")
-            np.savetxt(os.path.join(path_store, "test", "y_test.txt"), test_set[1], fmt="%s")
+            np.savetxt(os.path.join(path_store, "test", "X_test.txt"), np.array(test_set[0], dtype=object), fmt="%s")
+            np.savetxt(os.path.join(path_store, "test", "y_test.txt"), np.array(test_set[1], dtype=object), fmt="%s")
         print("Test set size:", len(test_set[0]))
         return train_set, dev_set, test_set
 
