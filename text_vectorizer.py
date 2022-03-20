@@ -179,3 +179,56 @@ class TargetVectorizer:
             )
         return np.array([self.vectorizer.transform(document) for document in targets])
 
+    def inverse_transform(self, targets):
+        """
+        Performs the inverse one-hot encoding for the dataset Ys, returning a list of decoded document tags.
+        """
+        if self.vectorizer.classes_.shape[0] == 0:
+            raise NotAdaptedError(
+                "The target vectorizer has not been adapted yet. Please adapt it first."
+            )
+        return np.array([self.vectorizer.inverse_transform(document) for document in targets])
+
+
+if __name__ == "__main__":
+    # read data
+    dataset_dir = os.path.join("dataset", "dependency_treebank")
+    docs = os.listdir(dataset_dir)
+    X = []
+    y = []
+    for doc in docs:
+        doc_path = os.path.join(dataset_dir, doc)
+        np_doc = np.loadtxt(doc_path, str, delimiter="\t")
+        X.append(np_doc[:, 0])
+        y.append(np_doc[:, 1])
+    X, y = np.array(X), np.array(y)
+
+    print("BEFORE VECTORIZING")
+    print("First input data:")
+    print(f"\tShape: {X[0].shape}")
+    #print(f"\tInput: {X[0]}")
+    print("First target data:")
+    print(f"\tShape: {y[0].shape}")
+    print(f"\tTarget: {y[0]}")
+
+    # convert inputs to vector representation
+    text_vectorizer = TextVectorizer(
+        embedding_dim=50,
+        embedding_folder=os.path.join(os.getcwd(), "embeddings")
+    )
+    text_vectorizer.adapt(X)
+    X = text_vectorizer.transform(X)
+
+    # convert targets to one-hot representation
+    target_vectorizer = TargetVectorizer()
+    target_vectorizer.adapt(y)  
+    y = target_vectorizer.transform(y)
+    
+    print("\nAFTER VECTORIZING")
+    print("First input data:")
+    print(f"\tShape: {X[0].shape}")
+    print(f"\tInput: {X[0]}")
+    print("First target data:")
+    print(f"\tShape: {y[0].shape}")
+    print(f"\tTarget: {y[0]}")
+    print(f"\tInverse transformed target: {target_vectorizer.inverse_transform(y)[0]}")
