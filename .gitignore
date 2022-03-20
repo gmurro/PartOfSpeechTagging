@@ -1,8 +1,8 @@
 data/
+dataset/
+*.dp
+*.txt
 glove.*
-train_X.txt
-test_X.txt
-dev_X.txt
 oov_words.txt
 outputs_alacarte.txt
 outputs_not_found.txt

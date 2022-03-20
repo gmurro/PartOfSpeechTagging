@@ -16,76 +16,125 @@ class TextVectorizer:
         glove_url="http://nlp.stanford.edu/data/glove.6B.zip",
         max_tokens=20000,
         embedding_dim=100,
-        to_lower=True,
+        embedding_folder="glove",
     ):
         """
         This class parses the GloVe embeddings, the input documents are expected
         to be in the form of a list of lists.
         [["word1", "word2", ...], ["word1", "word2", ...], ...]
 
-        Args:
-            glove_url: The url of the GloVe embeddings.
-            max_tokens: The maximum number of words in the vocabulary.
-            embedding_dim: The dimension of the embeddings(pick one of 50, 100, 200, 300).
-            to_lower: Whether to convert the words to lowercase.
+        Parameters
+        ----------
+        glove_url : The url of the GloVe embeddings.
+        max_tokens : The maximum number of words in the vocabulary.
+        embedding_dim : The dimension of the embeddings (pick one of 50, 100, 200, 300).
+        embedding_folder : folder where the embedding will be downloaded
         """
         self.max_tokens = max_tokens
         self.embedding_dim = embedding_dim
-        self.to_lower = to_lower
-        self.download_glove_if_needed(glove_url=glove_url)
-        self.parse_glove()
+        self.download_glove_if_needed(glove_url=glove_url, embedding_folder=embedding_folder)
+        
+        # create the vocabulary
+        self.vocabulary = self.parse_glove(embedding_folder) 
 
-    def download_glove_if_needed(self, glove_url):
+    def download_glove_if_needed(self, glove_url, embedding_folder):
         """
         Downloads the glove embeddings from the internet
-
-        Args:
-            glove_url: The url of the GloVe embeddings.
+        
+        Parameters
+        ----------
+        glove_url : The url of the GloVe embeddings.
+        embedding_folder: folder where the embedding will be downloaded
         """
-        if not glob.glob("glove*.txt"):
-            request.urlretrieve(glove_url, "glove.6B.zip")
-            with zipfile.ZipFile("glove.6B.zip", "r") as zip_ref:
-                zip_ref.extractall("glove_files")
-            os.remove("glove.6B.zip")
+        # create embedding folder if it does not exist
+        if not os.path.exists(embedding_folder):
+            os.makedirs(embedding_folder)
 
-    def parse_glove(self):
+        # extract the embedding if it is not extracted
+        if not glob.glob(os.path.join(embedding_folder, "**/glove*.txt"), recursive=True):
+
+            # download the embedding if it does not exist 
+            embedding_zip = os.path.join(embedding_folder, glove_url.split("/")[-1])
+            if not os.path.exists(embedding_zip):
+                print("Downloading the GloVe embeddings...")
+                request.urlretrieve(glove_url, embedding_zip)
+                print("Successful download!")
+
+            # extract the embedding
+            print("Extracting the embeddings...")
+            with zipfile.ZipFile(embedding_zip, "r") as zip_ref:
+                zip_ref.extractall(embedding_folder)
+                print("Successfully extracted the embeddings!")
+            os.remove(embedding_zip)
+
+    def parse_glove(self, embedding_folder):
         """
         Parses the GloVe embeddings from their files, filling the vocabulary.
+        
+        Parameters
+        ----------
+        embedding_folder : folder where the embedding files are stored
+        
+        Returns
+        -------
+        dictionary representing the vocabulary from the embeddings
         """
-        self.vocabulary = {}
-        with open("glove.6B." + str(self.embedding_dim) + "d.txt") as f:
+        vocabulary = {}
+        embedding_file = os.path.join(embedding_folder, "glove.6B." + str(self.embedding_dim) + "d.txt")
+        with open(embedding_file) as f:
             for line in f:
                 word, coefs = line.split(maxsplit=1)
                 coefs = np.fromstring(coefs, "f", sep=" ")
-                self.vocabulary[word.lower()] = coefs
+                vocabulary[word] = coefs
+        return vocabulary
 
-    def adapt(self, documents: np.array):
+    def adapt(self, documents):
         """
         Computes the OOV words for a single data split, and adds them to the dictionary.
-
-        Args:
-            documents: The data split (might be training set, validation set, or test set).
+        
+        Parameters
+        ----------
+        documents : The data split (might be training set, validation set, or test set).
         """
+        # create a set containing words from the documents in a given data split
         words = {
-            word.lower() if self.to_lower else word for doc in documents for word in doc
-        }  # Use a set containing words
+            word for doc in documents for word in doc
+        }  
         oov_words = words - self.vocabulary.keys()
+
+        # add the OOV words to the vocabulary giving them a random encoding
         for word in oov_words:
             self.vocabulary[word] = np.random.uniform(-1, 1, size=self.embedding_dim)
         print(f"Generated embeddings for {len(oov_words)} OOV words.")
 
     def transform(self, documents):
         """
-        Transform the data into the input structure.
+        Transform the data into the input structure for the training. This method should be used always after the adapt method.
+
+        Parameters
+        ----------
+        documents : The data split (might be training set, validation set, or test set). 
+        
+        Returns
+        -------
+        Numpy array of shape (number of documents, number of words, embedding dimension)
         """
         return np.array([self._transform_document(document) for document in documents])
 
     def _transform_document(self, document):
         """
         Transforms a single document to the GloVe embedding
+        
+        Parameters
+        ----------
+        document : The document to be transformed.
+
+        Returns
+        -------
+        Numpy array of shape (number of words, embedding dimension)
         """
         try:
-            return np.array([self.vocabulary[word.lower()] for word in document])
+            return np.array([self.vocabulary[word] for word in document])
         except KeyError:
             raise NotAdaptedError(
                 f"The whole document is not in the vocabulary. Please adapt the vocabulary first."
@@ -93,16 +142,20 @@ class TextVectorizer:
 
 
 class TargetVectorizer:
-    """
-    One-hot encodes the target documents, containing the POS tags.
-    """
 
     def __init__(self):
+        """
+        This class one-hot encodes the target documents, containing the POS tags.
+        """
         self.vectorizer = LabelBinarizer()
 
     def adapt(self, targets):
         """
         Fits the vectorizer for the classes.
+
+        Parameters
+        ----------
+        targets : The target tags for the dataset split given (it is a list of lists).
         """
         self.vectorizer.fit(
             [target for doc_targets in targets for target in doc_targets]
@@ -111,28 +164,18 @@ class TargetVectorizer:
     def transform(self, targets):
         """
         Performs the one-hot encoding for the dataset Ys, returning a list of encoded document tags.
+        
+        Parameters
+        ----------
+        targets : The target tags for the dataset split given (it is a list of lists).
+
+        Returns
+        -------
+        Numpy array of shape (number of documents, numbero of tokens, number of classes)
         """
         if self.vectorizer.classes_.shape[0] == 0:
             raise NotAdaptedError(
                 "The target vectorizer has not been adapted yet. Please adapt it first."
             )
-        return [self.vectorizer.transform(document) for document in targets]
+        return np.array([self.vectorizer.transform(document) for document in targets])
 
-
-if __name__ == "__main__":
-    data_dir = "data/" + os.listdir("data")[0] + "/"
-    docs = os.listdir(data_dir)
-    X = []
-    y = []
-    for doc in docs:
-        np_doc = np.loadtxt(data_dir + doc, str, delimiter="\t")
-        X.append(np_doc[:, 0])  # " ".join(np_doc[:,0]))
-        y.append(np_doc[:, 1])  # " ".join(np_doc[:,1]))
-    X, y = np.array(X), np.array(y)
-    tv = TextVectorizer(max_tokens=20000)
-    tv.adapt(X)
-    print(X)
-    print(tv.transform(X)[0])
-    targbvec = TargetVectorizer()
-    targbvec.adapt(y)
-    print(targbvec.transform(y))

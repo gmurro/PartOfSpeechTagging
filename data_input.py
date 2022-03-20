@@ -13,43 +13,53 @@ class DataInput:
         """
         Constructor for DataInput class that loads the data from the data_url and creates the train, dev and test datasets.
         The dataset splitted is available through the instance variables self.train, self.dev, self.test
-            :param data_url: URL of the dataset
-            :param train_size: percentage of the dataset that will be used for training
-            :param dev_size: percentage of the dataset that will be used for development
-            :param dataset_folder: folder where the dataset will be downloaded
-            :param split_into_sentences: boolean indicating if each document in the dataset should be splitted into sentences or not
+        
+        Parameters
+        ----------    
+        data_url : URL of the dataset
+        train_size : percentage of the dataset that will be used for training
+        dev_size : percentage of the dataset that will be used for development
+        dataset_folder : folder where the dataset will be downloaded
+        split_into_sentences : boolean indicating if each document in the dataset should be splitted into sentences or not
         """
         docs = self.import_data(data_url, dataset_folder)           
         X, y = self.parse_dataset(docs, split_into_sentences)
         self.train, self.dev, self.test = self.train_dev_test_split(X, y, train_size, dev_size, path_store=os.path.join(dataset_folder, "split"))
 
-    def import_data(self, data_url, dataset_folder, files_extension="dp"):
+    def import_data(self, data_url, dataset_folder):
         """
         Import dataset from URL.
-            :param data_url: URL of the dataset
-            :param dataset_folder: folder where the dataset will be downloaded
-            :param files_extension: extension of the files inside the dataset (default: dp)
-            :return: list of document paths
+
+        Parameters
+        ----------  
+        data_url : URL of the dataset
+        dataset_folder : folder where the dataset will be downloaded
+        files_extension : extension of the files inside the dataset (default: dp)
+
+        Returns
+        -------
+        list of document paths
         """
         # create dataset folder if it does not exist
         if not os.path.exists(dataset_folder):
             os.makedirs(dataset_folder)
 
         # extract the dataset if it is not extracted
-        if not glob.glob(os.path.join(dataset_folder, "**/*."+files_extension), recursive=True):
+        if not glob.glob(os.path.join(dataset_folder, "**/*.dp"), recursive=True):
 
             # download the dataset if it does not exist 
-            dataset_path = os.path.join(dataset_folder, data_url.split("/")[-1])
-            if not os.path.exists(dataset_path):
+            dataset_zip = os.path.join(dataset_folder, data_url.split("/")[-1])
+            if not os.path.exists(dataset_zip):
                 print("Downloading the dataset...")
-                request.urlretrieve(data_url, dataset_path)
+                request.urlretrieve(data_url, dataset_zip)
                 print("Successful download!")
 
             # extract the dataset
             print("Extracting the dataset...")
-            with zipfile.ZipFile(dataset_path, "r") as zip_ref:
+            with zipfile.ZipFile(dataset_zip, "r") as zip_ref:
                 zip_ref.extractall(dataset_folder)
                 print("Successfully extracted the dataset!")
+            os.remove(dataset_zip)
         
         dataset_extracted_dir = os.path.join(dataset_folder, os.listdir(dataset_folder)[0])
         docs = [os.path.join(dataset_extracted_dir, doc) for doc in os.listdir(dataset_extracted_dir)]
@@ -58,9 +68,15 @@ class DataInput:
     def parse_dataset(self, docs, split_into_sentences):
         """
         Parse the dependency treebank dataset. This takes into account if the dataset should be splitted into sentences or not (according to self.split_into_sentences).
-            :param docs: list of document paths
-            :param split_into_sentences: boolean indicating if each document in the dataset should be splitted into sentences or not
-            :return: a pair where the first element is a list of lists representing tokens in each document/sentence, the second is a list of lists representing POS tag of tokens in each document/sentence
+        
+        Parameters
+        ----------  
+        docs : list of document paths
+        split_into_sentences : boolean indicating if each document in the dataset should be splitted into sentences or not
+        
+        Returns
+        -------
+        pair where the first element is a list of lists representing tokens in each document/sentence, the second is a list of lists representing POS tag of tokens in each document/sentence
         """
         X = []
         y = []
@@ -96,12 +112,18 @@ class DataInput:
     def train_dev_test_split(self, X, y, train_size, dev_size, path_store=None):
         """
         Split dataset into train, validation and test.
-            :param X: list of lists of tokens in each document/sentence
-            :param y: list of lists of POS tags in each document/sentence
-            :param train_size: percentage of the dataset used for training
-            :param dev_size: percentage of the dataset used for validation (note that test size is 1-train_size-dev_size)
-            :param path_store: path where the split datasets will be stored. If None, then the split datasets will not be stored.
-            :return: a triple where the first element is the train-set, the second element is the dev-set and the third element is the test-set
+
+        Parameters
+        ----------
+        X : list of lists of tokens in each document/sentence
+        y : list of lists of POS tags in each document/sentence
+        train_size : percentage of the dataset used for training
+        dev_size : percentage of the dataset used for validation (note that test size is 1-train_size-dev_size)
+        path_store : path where the split datasets will be stored. If None, then the split datasets will not be stored.
+        
+        Returns
+        -------
+        triple where the first element is the train-set, the second element is the dev-set and the third element is the test-set
         """
         # shuffle the dataset
         dataset = list(zip(X, y))
@@ -116,7 +138,7 @@ class DataInput:
             os.makedirs(os.path.join(path_store, "test"))
 
         # build the train set
-        train_size = int(train_size*len(X))
+        train_size = int(np.ceil(train_size*len(X)))
         train_set = (X[:train_size], y[:train_size])
         if path_store is not None:
             np.savetxt(os.path.join(path_store, "train", "X_train.txt"), train_set[0], fmt="%s")
@@ -124,7 +146,7 @@ class DataInput:
         print("Train set size:", len(train_set[0]))
 
         # build the dev set
-        dev_size = int(dev_size*len(X))
+        dev_size = int(np.ceil(dev_size*len(X)))
         dev_set = (X[train_size:train_size+dev_size], y[train_size:train_size+dev_size])
         if path_store is not None:
             np.savetxt(os.path.join(path_store, "dev", "X_dev.txt"), dev_set[0], fmt="%s")
@@ -139,4 +161,20 @@ class DataInput:
         print("Test set size:", len(test_set[0]))
         return train_set, dev_set, test_set
 
+    def preprocessing(self, set="train", to_lower=True):
+        """
+        Preprocess the dataset.
 
+        Parameters
+        ----------
+        set : the set to preprocess (it can be train, dev or test)
+        to_lower : boolean indicating if the dataset should be converted to lowercase
+        """
+        # lower the tokens in a given set
+        if set == "train" or set == "dev" or set == "test":
+            for doc in getattr(self, set)[0]:
+                    if to_lower:
+                        for i in range(len(doc)):
+                            doc[i] = doc[i].lower()
+        else:
+            raise ValueError("Invalid set name. It should be train, dev or test.")
