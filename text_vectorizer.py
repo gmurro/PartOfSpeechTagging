@@ -81,7 +81,7 @@ class TextVectorizer:
         """
         vocabulary = {}
         embedding_file = os.path.join(embedding_folder, "glove.6B." + str(self.embedding_dim) + "d.txt")
-        with open(embedding_file) as f:
+        with open(embedding_file, encoding='utf8') as f:
             for line in f:
                 word, coefs = line.split(maxsplit=1)
                 coefs = np.fromstring(coefs, "f", sep=" ")
@@ -161,6 +161,9 @@ class TargetVectorizer:
             [target for doc_targets in targets for target in doc_targets]
         )
 
+    def get_classes(self):
+        return self.vectorizer.classes_
+
     def transform(self, targets):
         """
         Performs the one-hot encoding for the dataset Ys, returning a list of encoded document tags.
@@ -192,7 +195,7 @@ class TargetVectorizer:
 
 if __name__ == "__main__":
     # read data
-    dataset_dir = os.path.join("dataset", "dependency_treebank")
+    dataset_dir = os.path.join("data", "dependency_treebank")
     docs = os.listdir(dataset_dir)
     X = []
     y = []

@@ -58,4 +58,10 @@ if __name__ == "__main__":
     
     # test the best two models
 
-    evaluate_model(best_model, X_test, y_test, labels)
+    # it is possible to obtain this information using classes_ attribute of LabelBinarizer
+    # the classes are: "$", "''", ",", "-LRB-", "-RRB-" (parenthesis), ".", ":", "LS" (list item marker),
+    # "SYM" (symbol), "``"
+    punctuation_indexes = [0, 1, 2, 3, 4, 5, 6, 16, 30, 43]
+    classes = target_vec.get_classes()
+    valid_labels = list(set(range(len(classes))) - set(punctuation_indexes))
+    evaluate_model(best_model, X_test, y_test, valid_labels)
