@@ -199,7 +199,16 @@ class TargetVectorizer:
                 "The target vectorizer has not been adapted yet. Please adapt it first."
             )
         return [self.vectorizer.inverse_transform(document) for document in targets]
-
+    
+    def get_classes(self):
+        """
+        Returns the classes of the target vectorizer.
+        
+        Returns
+        -------
+        List of classes
+        """
+        return self.vectorizer.classes_
 
 if __name__ == "__main__":
     # read data
