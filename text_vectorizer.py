@@ -118,6 +118,16 @@ class TargetVectorizer:
             )
         return [self.vectorizer.transform(document) for document in targets]
 
+    def inverse_transform(self, targets):
+        """
+        Performs the inverse one-hot encoding for the dataset Ys, returning a list of decoded document tags.
+        """
+        if self.vectorizer.classes_.shape[0] == 0:
+            raise NotAdaptedError(
+                "The target vectorizer has not been adapted yet. Please adapt it first."
+            )
+        return [self.vectorizer.inverse_transform(document) for document in targets]
+
 
 if __name__ == "__main__":
     data_dir = "data/" + os.listdir("data")[0] + "/"
