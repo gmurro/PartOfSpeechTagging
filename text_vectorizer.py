@@ -85,9 +85,7 @@ class TextVectorizer:
         -------
         dictionary representing the vocabulary from the embeddings
         """
-        # create the vocabulary
-        vocabulary = {}
-        
+        vocabulary = {"<pad>": np.zeros(self.embedding_dim)}
         embedding_file = os.path.join(
             embedding_folder, "glove.6B." + str(self.embedding_dim) + "d.txt"
         )
@@ -160,7 +158,7 @@ class TextVectorizer:
 
 
 class TargetVectorizer:
-    def __init__(self, max_size=300):
+    def __init__(self, max_size):
         """
         This class one-hot encodes the target documents, containing the POS tags.
         """
@@ -211,11 +209,9 @@ class TargetVectorizer:
     def inverse_transform(self, targets):
         """
         Performs the inverse one-hot encoding for the dataset Ys, returning a list of decoded document tags.
-
         Parameters
         ----------
         targets : The target tags for the dataset split given, already in one-hot encoding form.
-
         Returns
         -------
         List of decoded document tags
@@ -225,8 +221,67 @@ class TargetVectorizer:
                 "The target vectorizer has not been adapted yet. Please adapt it first."
             )
         return np.array(
-            [self.vectorizer.inverse_transform(document) for document in targets]
+            [
+                self.vectorizer.inverse_transform(document[document.any(1)])
+                for document in targets
+            ]
         )
+
+    def inverse_transform_probabilities(self, targets):
+        """
+        Performs the inverse one-hot encoding for a prediction, given the matrix of probabilities.
+
+        Parameters
+        ----------
+        targets : The predicted probabilities for targets.
+
+        Returns
+        -------
+        List of decoded document tags
+        """
+        targets = np.array(
+            [document[np.std(document, axis=1) > 0.05] for document in targets]
+        )
+        n_class = targets.shape[2]
+        len_sentence = targets.shape[1]
+        num_sentences = targets.shape[0]
+        y_pred = np.array(
+            [
+                [
+                    1 if targets[0, i, j] == max(targets[0, i, :]) else 0
+                    for j in range(n_class)
+                ]
+                for i in range(len_sentence)
+            ]
+        )
+        return self.inverse_transform([y_pred])
+
+    def inverse_transform_probabilities(self, targets):
+        """
+        Performs the inverse one-hot encoding for a prediction, given the matrix of probabilities.
+        Parameters
+        ----------
+        targets : The predicted probabilities for targets.
+        Returns
+        -------
+        List of decoded document tags
+        """
+        targets = np.array(
+            [document[np.std(document, axis=1) > 0.05] for document in targets]
+        )
+        n_class = targets.shape[2]
+        len_sentence = targets.shape[1]
+        num_sentences = targets.shape[0]
+        y_pred = np.array(
+            [
+                [
+                    1 if targets[0, i, j] == max(targets[0, i, :]) else 0
+                    for j in range(n_class)
+                ]
+                for i in range(len_sentence)
+            ]
+        )
+        return self.inverse_transform([y_pred])
 
     def get_classes(self):
         """
