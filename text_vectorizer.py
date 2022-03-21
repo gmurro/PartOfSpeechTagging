@@ -85,6 +85,9 @@ class TextVectorizer:
         -------
         dictionary representing the vocabulary from the embeddings
         """
+        # create the vocabulary
+        vocabulary = {}
+        
         embedding_file = os.path.join(
             embedding_folder, "glove.6B." + str(self.embedding_dim) + "d.txt"
         )

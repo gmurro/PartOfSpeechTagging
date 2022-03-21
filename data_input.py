@@ -34,6 +34,7 @@ class DataInput:
         """
         docs = self.import_data(data_url, dataset_folder)
         X, y = self.parse_dataset(docs, split_into_sentences)
+        self.max_size = self.get_max_size(X)
         self.train, self.dev, self.test = self.train_dev_test_split(
             X,
             y,
@@ -51,7 +52,6 @@ class DataInput:
         ----------
         data_url : URL of the dataset
         dataset_folder : folder where the dataset will be downloaded
-        files_extension : extension of the files inside the dataset (default: dp)
 
         Returns
         -------
@@ -129,7 +129,21 @@ class DataInput:
                 np_doc = np.loadtxt(doc, str, delimiter="\t", usecols=(0, 1))
                 X.append(np_doc[:, 0])
                 y.append(np_doc[:, 1])
-        return np.array(X), np.array(y)
+        return np.array(X, dtype=object), np.array(y, dtype=object)
+
+    def get_max_size(self, X):
+        """
+        Get the maximum size of the dataset.
+
+        Parameters
+        ----------
+        X : list of lists of tokens
+
+        Returns
+        -------
+        int
+        """
+        return max([len(x) for x in X])
 
     def train_dev_test_split(
         self, X, y, train_size, dev_size, path_store=None, shuffle=False
