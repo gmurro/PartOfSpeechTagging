@@ -25,7 +25,7 @@ if __name__ == "__main__":
     text_vectorizer = TextVectorizer(
         max_tokens=200000,
         embedding_dim=50,
-        embedding_folder=os.path.join(os.getcwd(), "embeddings")
+        embedding_folder=os.path.join(os.getcwd(), "glove")
     )
     text_vectorizer.adapt(X_train)
     X_train = text_vectorizer.transform(X_train)

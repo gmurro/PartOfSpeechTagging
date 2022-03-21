@@ -119,7 +119,7 @@ class TextVectorizer:
         -------
         Array of shape (number of documents, number of words, embedding dimension)
         """
-        return [self._transform_document(document) for document in documents]
+        return np.array([self._transform_document(document) for document in documents])
 
     def _transform_document(self, document):
         """
@@ -180,7 +180,7 @@ class TargetVectorizer:
             raise NotAdaptedError(
                 "The target vectorizer has not been adapted yet. Please adapt it first."
             )
-        return [self.vectorizer.transform(document) for document in targets]
+        return np.array([self.vectorizer.transform(document) for document in targets])
 
     def inverse_transform(self, targets):
         """
@@ -198,7 +198,7 @@ class TargetVectorizer:
             raise NotAdaptedError(
                 "The target vectorizer has not been adapted yet. Please adapt it first."
             )
-        return [self.vectorizer.inverse_transform(document) for document in targets]
+        return np.array([self.vectorizer.inverse_transform(document) for document in targets])
     
     def get_classes(self):
         """
@@ -212,7 +212,7 @@ class TargetVectorizer:
 
 if __name__ == "__main__":
     # read data
-    dataset_dir = os.path.join("data", "dependency_treebank")
+    dataset_dir = os.path.join("dataset", "dependency_treebank")
     docs = os.listdir(dataset_dir)
     X = []
     y = []

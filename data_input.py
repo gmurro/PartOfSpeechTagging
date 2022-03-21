@@ -108,7 +108,13 @@ class DataInput:
                 np_doc = np.loadtxt(doc, str, delimiter="\t", usecols = (0, 1))
                 X.append(np_doc[:, 0])
                 y.append(np_doc[:, 1])
-        return X, y
+
+        # add a padding appending dots to the end of each doc to make sure that all docs have the same length
+        max_tokens = max([len(doc) for doc in X])
+        for i, (doc, target) in enumerate(zip(X, y)):
+            X[i] = np.pad(doc, (0, max_tokens-len(doc)), constant_values=".")
+            y[i] = np.pad(target, (0, max_tokens-len(target)), constant_values=".")  
+        return np.array(X), np.array(y)
 
     def train_dev_test_split(self, X, y, train_size, dev_size, path_store=None, shuffle=False):
         """
@@ -132,7 +138,7 @@ class DataInput:
             dataset = list(zip(X, y))
             random.shuffle(dataset)
             X, y = zip(*dataset)
-            X, y = list(X), list(y)
+            X, y = np.array(X), np.array(y)
 
         # create folder where the split datasets will be stored if it does not exist
         if path_store is not None and not os.path.exists(path_store):
@@ -144,23 +150,23 @@ class DataInput:
         train_size = int(np.ceil(train_size*len(X)))
         train_set = (X[:train_size], y[:train_size])
         if path_store is not None:
-            np.savetxt(os.path.join(path_store, "train", "X_train.txt"), np.array(train_set[0], dtype=object), fmt="%s")
-            np.savetxt(os.path.join(path_store, "train", "y_train.txt"),  np.array(train_set[1], dtype=object), fmt="%s")
+            np.savetxt(os.path.join(path_store, "train", "X_train.txt"), train_set[0], fmt="%s")
+            np.savetxt(os.path.join(path_store, "train", "y_train.txt"), train_set[1], fmt="%s")
         print("Train set size:", len(train_set[0]))
 
         # build the dev set
         dev_size = int(np.ceil(dev_size*len(X)))
         dev_set = (X[train_size:train_size+dev_size], y[train_size:train_size+dev_size])
         if path_store is not None:
-            np.savetxt(os.path.join(path_store, "dev", "X_dev.txt"),  np.array(dev_set[0], dtype=object), fmt="%s")
-            np.savetxt(os.path.join(path_store, "dev", "y_dev.txt"),  np.array(dev_set[1], dtype=object), fmt="%s")
+            np.savetxt(os.path.join(path_store, "dev", "X_dev.txt"),  dev_set[0], fmt="%s")
+            np.savetxt(os.path.join(path_store, "dev", "y_dev.txt"),  dev_set[1], fmt="%s")
         print("Dev set size:", len(dev_set[0]))
 
         # build the test set
         test_set = (X[train_size+dev_size:], y[train_size+dev_size:])
         if path_store is not None:
-            np.savetxt(os.path.join(path_store, "test", "X_test.txt"), np.array(test_set[0], dtype=object), fmt="%s")
-            np.savetxt(os.path.join(path_store, "test", "y_test.txt"), np.array(test_set[1], dtype=object), fmt="%s")
+            np.savetxt(os.path.join(path_store, "test", "X_test.txt"), test_set[0], fmt="%s")
+            np.savetxt(os.path.join(path_store, "test", "y_test.txt"), test_set[1], fmt="%s")
         print("Test set size:", len(test_set[0]))
         return train_set, dev_set, test_set
 
