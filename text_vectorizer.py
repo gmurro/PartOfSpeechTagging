@@ -14,7 +14,6 @@ class TextVectorizer:
     def __init__(
         self,
         glove_url="http://nlp.stanford.edu/data/glove.6B.zip",
-        max_tokens=20000,
         embedding_dim=100,
         embedding_folder="glove",
         max_size=300,
@@ -27,11 +26,10 @@ class TextVectorizer:
         Parameters
         ----------
         glove_url : The url of the GloVe embeddings.
-        max_tokens : The maximum number of words in the vocabulary.
         embedding_dim : The dimension of the embeddings (pick one of 50, 100, 200, 300).
         embedding_folder : folder where the embedding will be downloaded
+        max_size : The maximum size of the documents.
         """
-        self.max_tokens = max_tokens
         self.embedding_dim = embedding_dim
         self.download_glove_if_needed(
             glove_url=glove_url, embedding_folder=embedding_folder
