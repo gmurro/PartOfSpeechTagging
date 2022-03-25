@@ -1,6 +1,8 @@
 data/
 dataset/
 *.dp
+tuner/
+tuner_ca/
 *.txt
 glove.*
 oov_words.txt
