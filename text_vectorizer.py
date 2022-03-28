@@ -254,29 +254,25 @@ class TargetVectorizer:
     def inverse_transform_probabilities(self, targets):
         """
         Performs the inverse one-hot encoding for a prediction, given the matrix of probabilities.
+
         Parameters
         ----------
         targets : The predicted probabilities for targets.
+
         Returns
         -------
         List of decoded document tags
         """
+        n_classes = targets.shape[2]
         targets = np.array(
             [document[np.std(document, axis=1) > 0.05] for document in targets]
         )
-        n_class = targets.shape[2]
-        len_sentence = targets.shape[1]
-        num_sentences = targets.shape[0]
-        y_pred = np.array(
-            [
-                [
-                    1 if targets[0, i, j] == max(targets[0, i, :]) else 0
-                    for j in range(n_class)
-                ]
-                for i in range(len_sentence)
-            ]
-        )
-        return self.inverse_transform([y_pred])
+        y_pred = np.zeros((len(targets), max([len(document) for document in targets]), n_classes))
+        for i, document in enumerate(targets):
+            for j, word in enumerate(document):
+                y_pred[i,j,np.argmax(word)] = 1
+        print(y_pred.shape)
+        return self.inverse_transform(y_pred)
 
     def get_classes(self):
         """
