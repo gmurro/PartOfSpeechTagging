@@ -270,7 +270,7 @@ class TargetVectorizer:
         y_pred = np.zeros((len(targets), max([len(document) for document in targets]), n_classes))
         for i, document in enumerate(targets):
             for j, word in enumerate(document):
-                y_pred[i,j,np.argmax(word)] = 1
+                y_pred[i,j,np.argmax(word)-1] = 1
         print(y_pred.shape)
         return self.inverse_transform(y_pred)
 
