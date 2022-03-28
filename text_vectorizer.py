@@ -175,9 +175,6 @@ class TargetVectorizer:
             [target for doc_targets in targets for target in doc_targets]
         )
 
-    def get_classes(self):
-        return self.vectorizer.classes_
-
     def transform(self, targets):
         """
         Performs the one-hot encoding for the dataset Ys, returning a list of encoded document tags.
