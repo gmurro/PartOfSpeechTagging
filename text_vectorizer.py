@@ -220,36 +220,8 @@ class TargetVectorizer:
                 self.vectorizer.inverse_transform(document[document.any(1)])
                 for document in targets
             ]
+            , dtype=object
         )
-
-    def inverse_transform_probabilities(self, targets):
-        """
-        Performs the inverse one-hot encoding for a prediction, given the matrix of probabilities.
-
-        Parameters
-        ----------
-        targets : The predicted probabilities for targets.
-
-        Returns
-        -------
-        List of decoded document tags
-        """
-        targets = np.array(
-            [document[np.std(document, axis=1) > 0.05] for document in targets]
-        )
-        n_class = targets.shape[2]
-        len_sentence = targets.shape[1]
-        num_sentences = targets.shape[0]
-        y_pred = np.array(
-            [
-                [
-                    1 if targets[0, i, j] == max(targets[0, i, :]) else 0
-                    for j in range(n_class)
-                ]
-                for i in range(len_sentence)
-            ]
-        )
-        return self.inverse_transform([y_pred])
 
     def inverse_transform_probabilities(self, targets):
         """
@@ -265,13 +237,13 @@ class TargetVectorizer:
         """
         n_classes = targets.shape[2]
         targets = np.array(
-            [document[np.std(document, axis=1) > 0.05] for document in targets]
+            [document[np.std(document, axis=1) > 0.05] for document in targets], dtype=object
         )
         y_pred = np.zeros((len(targets), max([len(document) for document in targets]), n_classes))
         for i, document in enumerate(targets):
             for j, word in enumerate(document):
-                y_pred[i,j,np.argmax(word)-1] = 1
-        print(y_pred.shape)
+                y_pred[i, j, np.argmax(word)] = 1
+
         return self.inverse_transform(y_pred)
 
     def get_classes(self):
@@ -307,7 +279,7 @@ if __name__ == "__main__":
 
     # convert inputs to vector representation
     text_vectorizer = TextVectorizer(
-        embedding_dim=50, embedding_folder=os.path.join(os.getcwd(), "embeddings")
+        embedding_dim=50, embedding_folder=os.path.join(os.getcwd(), "glove")
     )
     text_vectorizer.adapt(X)
     X = text_vectorizer.transform(X)
