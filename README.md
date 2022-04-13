@@ -1,4 +1,4 @@
-# ✅ Part-of-speech tagging ⁉️
+# 🏷️ Part-of-speech tagging ✍️
 
 This repository contains a project realized as part of the *Natural Language Processing* course of the [Master's degree in Artificial Intelligence](https://corsi.unibo.it/2cycle/artificial-intelligence), University of Bologna.
 
