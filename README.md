@@ -19,9 +19,8 @@ In order to have a better understanging of our proposed solution, take a look to
 
 ## Results
 The metric which has been used to compare models is the macro F1 score with the validation set, results are the following:
-|               |        |        |                   |                     |
-|:-------------:|:------:|:------:|:-----------------:|:-------------------:|
 |    Metric     | BiLSTM | BiGRU  |  2 BiLSTM + Dense |   BiLSTM + 2 Dense  |
+|:-------------:|:------:|:------:|:-----------------:|:-------------------:|
 | Accuracy val  | 0.8457 | 0.8362 |       0.7564      |       0.7907        |
 | F1 score val  | 0.6183 | 0.6117 |       0.5094      |       0.4840        |
 | F1 score test | 0.6246 | 0.6062 |   not tested      |   not tested        |
