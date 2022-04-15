@@ -11,7 +11,7 @@ To tackle this problem, different types of Recurrent Neural Networks and paramet
 ## Dataset
 For this experiment, the [Dependency Parsed Treebank](https://www.nltk.org/nltk_data/) dataset is used.
 It contains 199 documents annotated, but in oder to achieve better results each document is been splitted into sentences.
-The train-val-test split proprortin is 50%-25%-25%.
+The train-val-test split proportion is 50%-25%-25%.
 
 ## Request and solution proposed
 The task to comply with is described in the [assignment description](./Assignment_1.ipynb).
